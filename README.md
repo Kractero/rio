@@ -1,3 +1,5 @@
+A frontend for r3n queries because the code shared by atlae does not include some parts like the portions used to query the ns api, and even if it did, rate limiting
+
 Running todos
 
 - [ ] convert to requested format
