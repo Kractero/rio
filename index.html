@@ -9,6 +9,9 @@
       #error {
         color: red;
       }
+      #response {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -109,6 +112,8 @@
     <script>
       document.getElementById('card-query-form').addEventListener('submit', async function (event) {
         event.preventDefault()
+        const responseElement = document.querySelector('#response')
+        responseElement.style.display = 'none'
 
         const formData = new FormData(event.target)
         const formObject = Object.fromEntries(formData.entries())
@@ -241,7 +246,7 @@
         document.querySelector('form').style.display = 'none'
         document.querySelector('#instructions').style.display = 'none'
 
-        const responseElement = document.querySelector('#response')
+        responseElement.style.display = 'block'
         responseElement.querySelector('#past').textContent = data.posted_query
         responseElement.querySelector('#processed').textContent = data.processed_query
         responseElement.querySelector('#total').textContent = cards.length
