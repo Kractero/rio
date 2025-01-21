@@ -4,6 +4,7 @@ Running todos
 
 - [x] convert to requested format
 - [x] download button for json, csv?
-- [ ] update the instructions
-- [ ] button to store the useragent in local storage
+- [x] update the instructions
+- [x] button to store the useragent in local storage
 - [ ] split the js into a separate file
+- [ ] cosmetic stuff

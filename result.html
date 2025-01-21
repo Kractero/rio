@@ -75,7 +75,7 @@
           return true
         })
 
-        formObject.query = reformattedWithoutCte.join('\n')
+        formObject.query = reformattedWithoutCte.join('\n').replaceAll('\r', '')
         const queryParams = new URLSearchParams(formObject).toString()
 
         const response = await fetch(`https://rio.kractero.com/cgi-bin/get_daemon_advanced.sh?${queryParams}`)
@@ -159,7 +159,6 @@
           cards = cards.filter(card => cteStatuses[card.id])
         }
 
-        // Display results
         responseElement.style.display = 'block'
         responseElement.querySelector('#past').textContent = data.posted_query
         responseElement.querySelector('#processed').textContent = data.processed_query

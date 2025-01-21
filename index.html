@@ -13,26 +13,32 @@
   </head>
   <body>
     <h1>Advanced Card Queries</h1>
-    <form id="card-query-form" action="result.html" method="GET" onsubmit="return validateForm()">
+    <form id="card-query-form" action="result.html" method="GET" onsubmit="return validateUserAgent()">
       <h3>Query:</h3>
-      <p><textarea name="query" rows="10" cols="80"></textarea></p>
+      <p><textarea name="query" rows="10" cols="80" required></textarea></p>
       <p>
         <strong>Season:</strong> <input type="radio" class="season" name="season" value="3" checked /> season 3
         <input type="radio" class="season" name="season" value="2" /> season 2
         <input type="radio" class="season" name="season" value="1" /> season 1
       </p>
       <p>
-        <strong>User agent (required for ask, auction, bid, deck):</strong>
+        <strong>User agent (required for ask, auction, bid, collection, deck):</strong>
         <input type="text" class="useragent" name="useragent" />
       </p>
       <p id="error"></p>
       <p>
         <button name="submit" value="submit" type="submit">Submit</button>
         <button name="reset" value="reset" type="reset">Reset fields</button>
+        <button id="store" class="contrast" type="button">Store User Agent</button>
       </p>
     </form>
     <div id="instructions">
       <h3>Instructions:</h3>
+      <p>
+        Create a query by combining options from below. You can include a ! to exclude the corresponding cards. Options
+        can be separated by commas or by lines. The resulting query is the conjuction of all the options you specify.
+        You cannot provide an empty query.
+      </p>
       <ul>
         <li>Enter your card query, using the instructions described below.</li>
         <li>Select the season you want to search cards from.</li>
@@ -86,6 +92,144 @@
           <strong>trophy:TROPHY(:RANK)</strong> - Cards that have a trophy of type TROPHY (and optionally rank RANK).
         </li>
       </ul>
+      <h3>Available badges:</h3>
+      <p>Below is a list of all badges available in trading cards.</p>
+      <ul>
+        <li>Admin</li>
+        <li>Class</li>
+        <li>Commended</li>
+        <li>Condemned</li>
+        <li>Delegate</li>
+        <li><strong>Easter Egg</strong></li>
+        <li>Forum Mod</li>
+        <li>Founder</li>
+        <li>Game Mod</li>
+        <li><strong>General Assembly Resolution Author</strong></li>
+        <li><strong>Historical Resolution Author</strong></li>
+        <li><strong>Issues Author</strong></li>
+        <li>Issues Editor</li>
+        <li>Moderator</li>
+        <li>Postmaster</li>
+        <li>Postmaster-General</li>
+        <li>Retired Moderator</li>
+        <li>Roleplay Mentor</li>
+        <li>Sec-Gen</li>
+        <li>Secretariat</li>
+        <li><strong>Security Council Resolution Author</strong></li>
+        <li>Site Supporter</li>
+        <li>WA</li>
+      </ul>
+      <p>
+        Badge types in bold are <strong>stackable</strong>, meaning that a card may have a special numeric indicator,
+        e.g., "General Assembly Resolution Author (x7)". For stackable badges, you can provide an additional NUMBER
+        argument, e.g., for the previous example, you can query
+        <strong>badge:general_assembly_resolution_author:7</strong>. If you do not provide a NUMBER argument, then the
+        query will include every card that has the corresponding badge, regardless of number.
+      </p>
+      <h3>Available trophies:</h3>
+      <p>
+        Below is a list of all trophy types available in trading cards. You can append a rank to each type, to get only
+        cards with trophies of that type <strong>and</strong> rank. For example, you can query for
+        <strong>trophy:influence</strong> to get every card with an influence trophy, and for
+        <strong>trophy:influence:5</strong> to get only cards with a top-5% influence trophy.
+      </p>
+      <ul>
+        <li>Advanced</li>
+        <li>Agriculture</li>
+        <li>Aid</li>
+        <li>Apathetic</li>
+        <li>Armed</li>
+        <li>Arms</li>
+        <li>Authoritarian</li>
+        <li>Auto</li>
+        <li>Average</li>
+        <li>Avoided</li>
+        <li>Basket</li>
+        <li>Blackmarket</li>
+        <li>Business</li>
+        <li>Cheese</li>
+        <li>Compassionate</li>
+        <li>Conservative</li>
+        <li>Corrupt</li>
+        <li>Crime</li>
+        <li>Culture</li>
+        <li>Death</li>
+        <li>Defense</li>
+        <li>Devout</li>
+        <li>Dispincome</li>
+        <li>Drugs</li>
+        <li>Eco-govt</li>
+        <li>Economy</li>
+        <li>Educated</li>
+        <li>Employed</li>
+        <li>Endorsed</li>
+        <li>Environment</li>
+        <li>Equality</li>
+        <li>Extreme</li>
+        <li>Fat</li>
+        <li>Fish</li>
+        <li>Furniture</li>
+        <li>Gambling</li>
+        <li>Gdp</li>
+        <li>Godforsaken</li>
+        <li>Govt</li>
+        <li>Happy</li>
+        <li>Hdi</li>
+        <li>Healthcare</li>
+        <li>Healthy</li>
+        <li>Hightax</li>
+        <li>Inclusive</li>
+        <li>Income</li>
+        <li>Influence</li>
+        <li>Insurance</li>
+        <li>Leastcorrupt</li>
+        <li>Liberal</li>
+        <li>Life</li>
+        <li>Lowcrime</li>
+        <li>Lowtax</li>
+        <li>Manufacturing</li>
+        <li>Mining</li>
+        <li>Nice</li>
+        <li>Nude</li>
+        <li>Peace</li>
+        <li>Pizza</li>
+        <li>Police</li>
+        <li>Polifree</li>
+        <li>Poorincome</li>
+        <li>Population</li>
+        <li>Primitive</li>
+        <li>Pro-market</li>
+        <li>Publictransport</li>
+        <li>Publishing</li>
+        <li>Rebelyouth</li>
+        <li>Retail</li>
+        <li>Richincome</li>
+        <li>Rude</li>
+        <li>Safe</li>
+        <li>Smart</li>
+        <li>Soda</li>
+        <li>Stationary</li>
+        <li>Stupid</li>
+        <li>Tech</li>
+        <li>Timber</li>
+        <li>Tourism</li>
+        <li>Wealthgaps</li>
+        <li>Weather</li>
+        <li>Welfare</li>
+      </ul>
+      <h3>Available trophy ranks:</h3>
+      <p>
+        Below is a list of all trophy ranks available in trading cards. You can use these either with the rank option
+        (for example, <strong>rank:1t</strong>), or as a second argument to the trophy option (for example,
+        <strong>trophy:influence:1t</strong>).
+      </p>
+      <ul>
+        <li>1t</li>
+        <li>1</li>
+        <li>5</li>
+        <li>10</li>
+        -
+      </ul>
     </div>
 
     <script>
@@ -108,6 +252,17 @@
 
         return true
       }
+
+      document.getElementById('store').addEventListener('click', () => {
+        const form = document.getElementById('card-query-form')
+        const formData = new FormData(form)
+        const formObject = Object.fromEntries(formData.entries())
+        localStorage.setItem('UserAgent', formObject.useragent)
+      })
+
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelector('.useragent').value = localStorage.getItem('UserAgent')
+      })
     </script>
   </body>
 </html>
