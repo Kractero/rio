@@ -21,6 +21,10 @@
       #response-output {
         margin-top: 1rem;
       }
+
+      pre {
+        padding: 1rem;
+      }
     </style>
   </head>
   <body>
@@ -40,7 +44,7 @@
         <button id="download-btn">Download</button>
       </div>
       <button id="copy-btn">Copy Output</button>
-      <pre id="response-output"></pre>
+      <div id="response-output"></div>
     </div>
 
     <script>
@@ -163,7 +167,24 @@
         responseElement.querySelector('#past').textContent = data.posted_query
         responseElement.querySelector('#processed').textContent = data.processed_query
         responseElement.querySelector('#total').textContent = cards.length
-        document.getElementById('response-output').textContent = JSON.stringify(cards, null, 2)
+        document.querySelector('div#response-output').innerHTML =
+          formObject.format === 'full'
+            ? `
+                <ul>
+                  ${cards
+                    .map(
+                      card =>
+                        `<li><a href="https://www.nationstates.net/page=deck/card=${card.id}/season=${card.season}">${card.id} - ${card.name}</a></li>`
+                    )
+                    .join('')}
+                </ul>`
+            : formObject.format === 'csv'
+            ? `<pre>${cards.map(card => `${card.id},${card.name},${card.season}`).join('\n')}</pre>`
+            : formObject.format === 'list'
+            ? `<pre>${cards.map(card => `${card.name}: ${card.id}`).join('\n')}</pre>`
+            : formObject.format === 'json'
+            ? `<pre>${JSON.stringify(cards, null, 2)}</pre>`
+            : 'Invalid format selected. Please choose "full", "csv", "list", or "json".'
 
         document.getElementById('download-btn').addEventListener('click', () => {
           const format = document.getElementById('format').value
