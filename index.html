@@ -9,30 +9,17 @@
       #error {
         color: red;
       }
-      #response {
-        display: none;
-      }
     </style>
   </head>
   <body>
     <h1>Advanced Card Queries</h1>
-    <form id="card-query-form">
-      <input type="hidden" name="format" value="full" />
+    <form id="card-query-form" action="result.html" method="GET" onsubmit="return validateForm()">
       <h3>Query:</h3>
       <p><textarea name="query" rows="10" cols="80"></textarea></p>
       <p>
         <strong>Season:</strong> <input type="radio" class="season" name="season" value="3" checked /> season 3
         <input type="radio" class="season" name="season" value="2" /> season 2
         <input type="radio" class="season" name="season" value="1" /> season 1
-      </p>
-      <p>
-        <strong>Output format:</strong>
-        <select name="format" size="1">
-          <option value="full">default</option>
-          <option value="csv">csv</option>
-          <option value="list">list</option>
-          <option value="json">json</option>
-        </select>
       </p>
       <p>
         <strong>User agent (required for ask, auction, bid, deck):</strong>
@@ -100,172 +87,27 @@
         </li>
       </ul>
     </div>
-    <div id="response">
-      <h3><a href="queries.html">Submit a new query</a></h3>
-      <h3><strong>Posted query:</strong> <span id="past"></span></h3>
-      <h3>Response:</h3>
-      <p><strong>Processed query:</strong> <span id="processed"></span></p>
-      <p><strong>Total cards:</strong> <span id="total"></span></p>
-      <pre id="response-output"></pre>
-    </div>
 
     <script>
-      document.getElementById('card-query-form').addEventListener('submit', async function (event) {
-        event.preventDefault()
-        const responseElement = document.querySelector('#response')
-        responseElement.style.display = 'none'
-
-        const formData = new FormData(event.target)
+      function validateUserAgent() {
+        const form = document.getElementById('card-query-form')
+        const formData = new FormData(form)
         const formObject = Object.fromEntries(formData.entries())
-        const format = formObject['format']
-        delete formObject['format']
 
-        const { reformatted, clientSide } = formObject.query.split('\n').reduce(
-          (acc, query) => {
-            if (['ask', 'auction', 'bid', 'collection', 'deck'].some(word => query.includes(word))) {
-              acc.clientSide.push(query)
-            } else {
-              acc.reformatted.push(query)
-            }
-            return acc
-          },
-          { reformatted: [], clientSide: [] }
-        )
+        const clientSide = formObject.query
+          .split('\n')
+          .filter(query => ['ask', 'auction', 'bid', 'collection', 'deck'].some(word => query.includes(word)))
 
-        let cte = false
-        const reformattedWithoutCte = reformatted.filter(query => {
-          if (query.includes('cte')) {
-            cte = true
-            return false
-          }
-          return true
-        })
+        const errorElement = document.querySelector('#error')
+        errorElement.textContent = ''
 
-        document.querySelector('#error').textContent = ''
-        if (clientSide.length > 0) {
-          if (!formObject.useragent) {
-            document.querySelector('#error').textContent = 'Please provide a user agent for this query.'
-            return
-          }
+        if (clientSide.length > 0 && !formObject.useragent) {
+          errorElement.textContent = 'Please provide a user agent for this query.'
+          return false
         }
 
-        formObject.query = reformattedWithoutCte.join('\n')
-
-        const queryParams = new URLSearchParams(formObject).toString()
-
-        const newUrl = `${window.location.origin}${window.location.pathname}?${queryParams}`
-        window.history.pushState({}, '', newUrl)
-
-        const response = await fetch(`https://rio.kractero.com/cgi-bin/get_daemon_advanced.sh?${queryParams}`)
-        const data = await response.json()
-
-        const fetchData = async url => {
-          const data = await fetch(url, {
-            method: 'GET',
-            'User-Agent': `Used by ${formObject.useragent} with queries, originally by r3n, modified by Kractero`,
-          })
-
-          const text = await data.text()
-          const parser = new DOMParser()
-          const xmlDoc = parser.parseFromString(text, 'application/xml')
-          return xmlDoc
-        }
-
-        let cards = data.cards
-        if (clientSide.length > 0) {
-          const clientSideQueries = clientSide.map(query => {
-            const [key, value] = query.split(':')
-            return { key: key.toLowerCase(), value }
-          })
-
-          const apiMap = {
-            ask: value => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+asksbids;nationname=${value}`,
-            bid: value => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+asksbids;nationname=${value}`,
-            auction: () => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+auctions`,
-            collection: value =>
-              `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+collection;collectionid=${value}`,
-            deck: value => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+deck;nationname=${value}`,
-          }
-
-          const fetchPromises = clientSideQueries
-            .map(query => {
-              const fetchUrl = apiMap[query.key] ? apiMap[query.key](query.value) : null
-              if (fetchUrl) {
-                return fetchData(fetchUrl)
-              }
-              return null
-            })
-            .filter(promise => promise !== null)
-
-          const responses = await Promise.all(fetchPromises)
-
-          responses.forEach(response => {
-            if (response) {
-              const selectors = {
-                AUCTIONS: 'AUCTION',
-                ASKS: 'ASK',
-                BIDS: 'BID',
-                COLLECTION: 'CARD',
-                DECK: 'CARD',
-              }
-
-              let matchingIdsAndSeasons = new Set()
-
-              Object.keys(selectors).forEach(key => {
-                if (response.querySelector(key)) {
-                  const items = response.querySelectorAll(selectors[key])
-                  items.forEach(item => {
-                    const cardId = item.querySelector('CARDID').textContent
-                    const season = item.querySelector('SEASON').textContent
-                    matchingIdsAndSeasons.add(`${cardId}-${season}`)
-                  })
-                }
-              })
-
-              cards = data.cards.filter(card => matchingIdsAndSeasons.has(`${card.id}-${card.season}`))
-            }
-          })
-        }
-
-        if (cte) {
-          const cardIds = data.cards.map(card => card.id)
-          const response = await fetch('https://kotama.kractero.com/api/cte', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Origin': 'rio',
-            },
-            body: JSON.stringify(cardIds),
-          })
-
-          const cteStatuses = await response.json()
-
-          cards = cards.filter(card => cteStatuses[card.id])
-        }
-
-        document.querySelector('form').style.display = 'none'
-        document.querySelector('#instructions').style.display = 'none'
-
-        responseElement.style.display = 'block'
-        responseElement.querySelector('#past').textContent = data.posted_query
-        responseElement.querySelector('#processed').textContent = data.processed_query
-        responseElement.querySelector('#total').textContent = cards.length
-        document.getElementById('response-output').textContent = JSON.stringify(cards, null, 2)
-      })
-
-      window.addEventListener('DOMContentLoaded', () => {
-        const urlParams = new URLSearchParams(window.location.search)
-        for (const [key, value] of urlParams.entries()) {
-          const field = document.querySelector(`[name="${key}"]`)
-          if (field) {
-            if (field.type === 'radio') {
-              document.querySelector(`[name="${key}"][value="${value}"]`).checked = true
-            } else {
-              field.value = value
-            }
-          }
-        }
-      })
+        return true
+      }
     </script>
   </body>
 </html>

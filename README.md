@@ -2,8 +2,8 @@ A frontend for r3n queries because the code shared by atlae does not include som
 
 Running todos
 
-- [ ] convert to requested format
-- [ ] download button for json, csv?
+- [x] convert to requested format
+- [x] download button for json, csv?
 - [ ] update the instructions
 - [ ] button to store the useragent in local storage
 - [ ] split the js into a separate file

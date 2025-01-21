@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="css/pico.min.css" />
+    <style>
+      body {
+        padding: 1rem;
+      }
+      #fileControls {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      #fileControls select {
+        margin-bottom: 0px;
+      }
+
+      #response-output {
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Advanced Card Queries</h1>
+    <div id="response">
+      <h3><a href="index.html">Submit a new query</a></h3>
+      <h3><strong>Posted query:</strong> <span id="past"></span></h3>
+      <h3>Response:</h3>
+      <p><strong>Processed query:</strong> <span id="processed"></span></p>
+      <p><strong>Total cards:</strong> <span id="total"></span></p>
+      <div id="fileControls">
+        <select name="format" id="format">
+          <option value="csv">CSV</option>
+          <option value="list">List</option>
+          <option value="json">JSON</option>
+        </select>
+        <button id="download-btn">Download</button>
+      </div>
+      <button id="copy-btn">Copy Output</button>
+      <pre id="response-output"></pre>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', async function () {
+        const urlParams = new URLSearchParams(window.location.search)
+        const formObject = Object.fromEntries(urlParams.entries())
+
+        if (!formObject.query) {
+          document.querySelector('#error').textContent = 'Missing query parameter.'
+          return
+        }
+
+        const responseElement = document.querySelector('#response')
+        const { reformatted, clientSide } = formObject.query.split('\n').reduce(
+          (acc, query) => {
+            if (['ask', 'auction', 'bid', 'collection', 'deck'].some(word => query.includes(word))) {
+              acc.clientSide.push(query)
+            } else {
+              acc.reformatted.push(query)
+            }
+            return acc
+          },
+          { reformatted: [], clientSide: [] }
+        )
+
+        let cte = false
+        const reformattedWithoutCte = reformatted.filter(query => {
+          if (query.includes('cte')) {
+            cte = true
+            return false
+          }
+          return true
+        })
+
+        formObject.query = reformattedWithoutCte.join('\n')
+        const queryParams = new URLSearchParams(formObject).toString()
+
+        const response = await fetch(`https://rio.kractero.com/cgi-bin/get_daemon_advanced.sh?${queryParams}`)
+        const data = await response.json()
+
+        let cards = data.cards
+        let content = ''
+
+        if (clientSide.length > 0) {
+          const clientSideQueries = clientSide.map(query => {
+            const [key, value] = query.split(':')
+            return { key: key.toLowerCase(), value }
+          })
+
+          const apiMap = {
+            ask: value => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+asksbids;nationname=${value}`,
+            bid: value => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+asksbids;nationname=${value}`,
+            auction: () => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+auctions`,
+            collection: value =>
+              `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+collection;collectionid=${value}`,
+            deck: value => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+deck;nationname=${value}`,
+          }
+
+          const fetchPromises = clientSideQueries
+            .map(query => {
+              const fetchUrl = apiMap[query.key] ? apiMap[query.key](query.value) : null
+              if (fetchUrl) {
+                return fetch(fetchUrl)
+                  .then(res => res.text())
+                  .then(text => {
+                    const parser = new DOMParser()
+                    return parser.parseFromString(text, 'application/xml')
+                  })
+              }
+              return null
+            })
+            .filter(promise => promise !== null)
+
+          const responses = await Promise.all(fetchPromises)
+
+          responses.forEach(response => {
+            if (response) {
+              const selectors = {
+                AUCTIONS: 'AUCTION',
+                ASKS: 'ASK',
+                BIDS: 'BID',
+                COLLECTION: 'CARD',
+                DECK: 'CARD',
+              }
+
+              let matchingIdsAndSeasons = new Set()
+
+              Object.keys(selectors).forEach(key => {
+                if (response.querySelector(key)) {
+                  const items = response.querySelectorAll(selectors[key])
+                  items.forEach(item => {
+                    const cardId = item.querySelector('CARDID').textContent
+                    const season = item.querySelector('SEASON').textContent
+                    matchingIdsAndSeasons.add(`${cardId}-${season}`)
+                  })
+                }
+              })
+
+              cards = data.cards.filter(card => matchingIdsAndSeasons.has(`${card.id}-${card.season}`))
+            }
+          })
+        }
+
+        if (cte) {
+          const cardIds = data.cards.map(card => card.id)
+          const response = await fetch('https://kotama.kractero.com/api/cte', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Origin': 'rio',
+            },
+            body: JSON.stringify(cardIds),
+          })
+
+          const cteStatuses = await response.json()
+          cards = cards.filter(card => cteStatuses[card.id])
+        }
+
+        // Display results
+        responseElement.style.display = 'block'
+        responseElement.querySelector('#past').textContent = data.posted_query
+        responseElement.querySelector('#processed').textContent = data.processed_query
+        responseElement.querySelector('#total').textContent = cards.length
+        document.getElementById('response-output').textContent = JSON.stringify(cards, null, 2)
+
+        document.getElementById('download-btn').addEventListener('click', () => {
+          const format = document.getElementById('format').value
+          const data = cards
+          let filename = `${responseElement.querySelector('#processed').textContent}.${format}`
+
+          if (format === 'csv') {
+            const headers = Object.keys(data[0]).join(',')
+            const rows = data.map(item => Object.values(item).join(',')).join('\n')
+            content = `${headers}\n${rows}`
+          } else if (format === 'list') {
+            content = data.map(item => `${item.name}: ${item.id}`).join('\n')
+          } else {
+            content = JSON.stringify(cards, null, 2)
+          }
+
+          const blob = new Blob([content], { type: 'text/plain' })
+          const link = document.createElement('a')
+          link.href = URL.createObjectURL(blob)
+          link.download = filename
+          link.click()
+          URL.revokeObjectURL(link.href)
+        })
+        document.getElementById('copy-btn').addEventListener('click', () => {
+          navigator.clipboard.writeText(JSON.stringify(cards, null, 2))
+        })
+      })
+    </script>
+  </body>
+</html>
