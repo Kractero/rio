@@ -81,12 +81,14 @@
         const clientSide = formObject.client.split('\n')
 
         if (clientSide.length > 0) {
-          let negation = false
+          const negations = []
           const clientSideQueries = clientSide.map(query => {
             let [key, value] = query.split(':')
             if (key.includes('!')) {
-              negation = true
+              negations.push(true)
               key = key.replace('!', '')
+            } else {
+              negations.push(false)
             }
             return { key: key.toLowerCase(), value }
           })
@@ -121,7 +123,7 @@
 
           const responses = await Promise.all(fetchPromises)
 
-          responses.forEach(response => {
+          responses.forEach((response, i) => {
             if (response) {
               const selectors = {
                 AUCTIONS: 'AUCTION',
@@ -144,10 +146,10 @@
                 }
               })
 
-              cards = data.cards.filter(card =>
-                negation
-                  ? matchingIdsAndSeasons.has(`${card.id}-${card.season}`)
-                  : !matchingIdsAndSeasons.has(`${card.id}-${card.season}`)
+              cards = cards.filter(card =>
+                negations[i]
+                  ? !matchingIdsAndSeasons.has(`${card.id}-${card.season}`)
+                  : matchingIdsAndSeasons.has(`${card.id}-${card.season}`)
               )
             }
           })
