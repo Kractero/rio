@@ -35,11 +35,12 @@
           <option value="csv">csv</option>
           <option value="list">list</option>
           <option value="json">json</option>
+          <option value="finder">finder</option>
         </select>
       </p>
       <p>
-        <strong>User agent (required for ask, auction, bid, collection, deck):</strong>
-        <input type="text" class="useragent" name="useragent" />
+        <strong>User agent:</strong>
+        <input type="text" class="useragent" name="useragent" required />
       </p>
       <p id="error"></p>
       <p>
@@ -265,13 +266,10 @@
         const formObject = Object.fromEntries(formData.entries())
 
         const query = formObject.query.split('\n')
-        const clientQuery = formObject['client-query'] ? formObject['client-query'].split('\n') : []
 
         const clientSideParameters = ['ask', 'auction', 'bid', 'collection', 'deck']
 
         const invalidQuery = query.filter(line => clientSideParameters.some(param => line.includes(param)))
-
-        const clientSideFound = clientQuery.filter(line => clientSideParameters.some(param => line.includes(param)))
 
         const errorElement = document.querySelector('#error')
         errorElement.textContent = ''
@@ -279,11 +277,6 @@
         if (invalidQuery.length > 0) {
           errorElement.textContent =
             'The query must not contain client-side parameters (ask, auction, bid, collection, deck).'
-          return false
-        }
-
-        if (clientSideFound.length > 0 && !formObject.useragent) {
-          errorElement.textContent = 'Please provide a user agent for client-side queries.'
           return false
         }
 

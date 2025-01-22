@@ -45,6 +45,7 @@
           <option value="csv">CSV</option>
           <option value="list">List</option>
           <option value="json">JSON</option>
+          <option value="finder">Finder</option>
         </select>
         <button id="download-btn">Download</button>
       </div>
@@ -56,6 +57,7 @@
       document.addEventListener('DOMContentLoaded', async function () {
         const urlParams = new URLSearchParams(window.location.search)
         const formObject = Object.fromEntries(urlParams.entries())
+        const useragent = formObject.useragent
 
         if (!formObject.query) {
           document.querySelector('#error').textContent = 'Missing query parameter.'
@@ -102,7 +104,11 @@
             .map(query => {
               const fetchUrl = apiMap[query.key] ? apiMap[query.key](query.value) : null
               if (fetchUrl) {
-                return fetch(fetchUrl)
+                return fetch(`${fetchUrl}&userAgent=${useragent}__using__QueriesRio__author_main_nation_Kractero`, {
+                  headers: {
+                    'User-Agent': `Used by ${useragent} with Queries (new r3n), modified by Kractero`,
+                  },
+                })
                   .then(res => res.text())
                   .then(text => {
                     const parser = new DOMParser()
@@ -174,7 +180,7 @@
                   ${cards
                     .map(
                       card =>
-                        `<li><a href="https://www.nationstates.net/page=deck/card=${card.id}/season=${card.season}">${card.id} - ${card.name}</a></li>`
+                        `<li><a href="https://www.nationstates.net/page=deck/card=${card.id}/season=${card.season}?generated_by=QueriesRio__author_main_nation_Kractero__usedBy_${useragent}">${card.id} - ${card.name}</a></li>`
                     )
                     .join('')}
                 </ul>`
@@ -184,6 +190,8 @@
             ? `<pre>${cards.map(card => `${card.name}: ${card.id}`).join('\n')}</pre>`
             : formObject.format === 'json'
             ? `<pre>${JSON.stringify(cards, null, 2)}</pre>`
+            : formObject.format === 'finder'
+            ? `<pre>${cards.map(card => `${card.id},${card.season}`).join('\n')}</pre>`
             : 'Invalid format selected. Please choose "full", "csv", "list", or "json".'
 
         document.getElementById('download-btn').addEventListener('click', () => {
@@ -197,8 +205,10 @@
             content = `${headers}\n${rows}`
           } else if (format === 'list') {
             content = data.map(item => `${item.name}: ${item.id}`).join('\n')
-          } else {
+          } else if (format === 'json') {
             content = JSON.stringify(cards, null, 2)
+          } else if (format === 'finder') {
+            content = data.map(item => `${item.id},${item.season}`).join('\n')
           }
 
           const blob = new Blob([content], { type: 'text/plain' })
@@ -209,7 +219,7 @@
           URL.revokeObjectURL(link.href)
         })
         document.getElementById('copy-btn').addEventListener('click', () => {
-          navigator.clipboard.writeText(JSON.stringify(cards, null, 2))
+          navigator.clipboard.writeText(document.querySelector('div#response-output').textContent)
         })
       })
     </script>
