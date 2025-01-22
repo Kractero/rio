@@ -17,11 +17,14 @@
   </head>
   <body>
     <h1>Card Queries</h1>
-    <form id="card-query-form" action="result.html" method="GET" onsubmit="return validateUserAgent()">
+    <form id="card-query-form" action="result.html" method="GET" onsubmit="return validateForm()">
       <h3>Query:</h3>
       <p><textarea name="query" rows="10" cols="80" required></textarea></p>
+      <h4>Client-side (ask, auction, bid, collection, deck, cte):</h4>
+      <p><textarea name="client" rows="3" cols="80"></textarea></p>
       <p>
-        <strong>Season:</strong> <input type="radio" class="season" name="season" value="3" checked /> season 3
+        <strong>Season:</strong> <input type="radio" class="season" name="season" value="4" checked /> season 4
+        <input type="radio" class="season" name="season" value="3" /> season 3
         <input type="radio" class="season" name="season" value="2" /> season 2
         <input type="radio" class="season" name="season" value="1" /> season 1
       </p>
@@ -253,20 +256,31 @@
     </footer>
 
     <script>
-      function validateUserAgent() {
+      function validateForm() {
         const form = document.getElementById('card-query-form')
         const formData = new FormData(form)
         const formObject = Object.fromEntries(formData.entries())
 
-        const clientSide = formObject.query
-          .split('\n')
-          .filter(query => ['ask', 'auction', 'bid', 'collection', 'deck'].some(word => query.includes(word)))
+        const query = formObject.query.split('\n')
+        const clientQuery = formObject['client-query'] ? formObject['client-query'].split('\n') : []
+
+        const clientSideParameters = ['ask', 'auction', 'bid', 'collection', 'deck']
+
+        const invalidQuery = query.filter(line => clientSideParameters.some(param => line.includes(param)))
+
+        const clientSideFound = clientQuery.filter(line => clientSideParameters.some(param => line.includes(param)))
 
         const errorElement = document.querySelector('#error')
         errorElement.textContent = ''
 
-        if (clientSide.length > 0 && !formObject.useragent) {
-          errorElement.textContent = 'Please provide a user agent for this query.'
+        if (invalidQuery.length > 0) {
+          errorElement.textContent =
+            'The query must not contain client-side parameters (ask, auction, bid, collection, deck).'
+          return false
+        }
+
+        if (clientSideFound.length > 0 && !formObject.useragent) {
+          errorElement.textContent = 'Please provide a user agent for client-side queries.'
           return false
         }
 
