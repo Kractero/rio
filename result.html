@@ -85,10 +85,10 @@
           const clientSideQueries = clientSide.map(query => {
             let [key, value] = query.split(':')
             if (key.includes('!')) {
-              logic = true
+              negation = true
               key = key.replace('!', '')
             }
-            return { key: key.toLowerCase(), value, logic }
+            return { key: key.toLowerCase(), value }
           })
 
           const apiMap = {
