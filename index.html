@@ -19,7 +19,7 @@
     <h1>Card Queries</h1>
     <form id="card-query-form" action="result.html" method="GET" onsubmit="return validateForm()">
       <h3>Query:</h3>
-      <p><textarea name="query" rows="10" cols="80" required></textarea></p>
+      <p><textarea name="query" rows="6" cols="80" required></textarea></p>
       <h4>Client-side (ask, auction, bid, collection, deck, cte):</h4>
       <p><textarea name="client" rows="3" cols="80"></textarea></p>
       <p>
@@ -83,19 +83,13 @@
         >
       </div>
       <h3>Available options:</h3>
-      <p>You can use the following options to create a query.</p>
+      <p>You can use the following options to create a query (serverside).</p>
       <ul>
-        <li><strong>ask:ASK</strong> - Cards that nation ASK has asks on.</li>
-        <li><strong>auction</strong> - Cards for which there is currently an active auction.</li>
         <li><strong>badge:BADGE(:NUMBER)</strong> - Cards with the badge BADGE (and optionally number NUMBER).</li>
-        <li><strong>bid:BID</strong> - Cards that nation BID has bids on.</li>
         <li>
           <strong>category:CATEGORY</strong> - Cards of nation category CATEGORY. (See the
           <a href="https://www.nationstates.net/page=faq#politics">NS FAQ</a> for a full list.)
         </li>
-        <li><strong>collection:COLLECTION</strong> - Cards in the collection with ID COLLECTION.</li>
-        <li><strong>cte</strong> - Cards of nations that have ceased to exist (CTE).</li>
-        <li><strong>deck:DECK</strong> - Cards in the deck of nation DECK.</li>
         <li><strong>exnation</strong> - Cards marked as ex-nations.</li>
         <li><strong>flag:FLAG</strong> - Cards with flags containing the string FLAG.</li>
         <li><strong>motto:MOTTO</strong> - Cards with mottoes containing the string MOTTO.</li>
@@ -107,6 +101,15 @@
         <li>
           <strong>trophy:TROPHY(:RANK)</strong> - Cards that have a trophy of type TROPHY (and optionally rank RANK).
         </li>
+      </ul>
+      <p>You can use the following options to create a query (clientside, must be accompanied with serverside)</p>
+      <ul>
+        <li><strong>ask:ASK</strong> - Cards that nation ASK has asks on.</li>
+        <li><strong>auction</strong> - Cards for which there is currently an active auction.</li>
+        <li><strong>bid:BID</strong> - Cards that nation BID has bids on.</li>
+        <li><strong>collection:COLLECTION</strong> - Cards in the collection with ID COLLECTION.</li>
+        <li><strong>cte</strong> - Cards of nations that have ceased to exist (CTE).</li>
+        <li><strong>deck:DECK</strong> - Cards in the deck of nation DECK.</li>
       </ul>
       <h3>Available badges:</h3>
       <p>Below is a list of all badges available in trading cards.</p>
