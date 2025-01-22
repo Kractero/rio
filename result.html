@@ -79,9 +79,14 @@
         const clientSide = formObject.client.split('\n')
 
         if (clientSide.length > 0) {
+          let negation = false
           const clientSideQueries = clientSide.map(query => {
-            const [key, value] = query.split(':')
-            return { key: key.toLowerCase(), value }
+            let [key, value] = query.split(':')
+            if (key.includes('!')) {
+              logic = true
+              key = key.replace('!', '')
+            }
+            return { key: key.toLowerCase(), value, logic }
           })
 
           const apiMap = {
@@ -133,7 +138,11 @@
                 }
               })
 
-              cards = data.cards.filter(card => matchingIdsAndSeasons.has(`${card.id}-${card.season}`))
+              cards = data.cards.filter(card =>
+                negation
+                  ? matchingIdsAndSeasons.has(`${card.id}-${card.season}`)
+                  : !matchingIdsAndSeasons.has(`${card.id}-${card.season}`)
+              )
             }
           })
         }
