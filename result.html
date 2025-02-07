@@ -54,6 +54,23 @@
     </div>
 
     <script>
+      function formatResponse(format, data) {
+        if (format === 'csv') {
+            const headers = Object.keys(data[0]).join(',')
+            const rows = data.map(item => Object.values(item).join(',')).join('\n')
+            content = `${headers}\n${rows}`
+          } else if (format === 'list') {
+            content = data.map(item => `${item.name}: ${item.id}`).join('\n')
+          } else if (format === 'json') {
+            content = JSON.stringify(cards, null, 2)
+          } else if (format === 'finder') {
+            content = data.map(item => `${item.id},${item.season}`).join('\n')
+          } else if (format === 'onelinelist') {
+            content = data.map(item => `${item.id}:${item.season}`).join(',')
+          }
+          return content
+      }
+
       document.addEventListener('DOMContentLoaded', async function () {
         const urlParams = new URLSearchParams(window.location.search)
         const formObject = Object.fromEntries(urlParams.entries())
@@ -186,32 +203,15 @@
                     )
                     .join('')}
                 </ul>`
-            : formObject.format === 'csv'
-            ? `<pre>${cards.map(card => `${card.id},${card.name},${card.season}`).join('\n')}</pre>`
-            : formObject.format === 'list'
-            ? `<pre>${cards.map(card => `${card.name}: ${card.id}`).join('\n')}</pre>`
-            : formObject.format === 'json'
-            ? `<pre>${JSON.stringify(cards, null, 2)}</pre>`
-            : formObject.format === 'finder'
-            ? `<pre>${cards.map(card => `${card.id},${card.season}`).join('\n')}</pre>`
+            : ['csv', 'list', 'json', 'finder', 'onelinelist'].includes(formObject.format) === 'csv'
+            ? `<pre>${formatResponse(formObject.format, cards)}</pre>`
             : 'Invalid format selected. Please choose "full", "csv", "list", or "json".'
 
         document.getElementById('download-btn').addEventListener('click', () => {
           const format = document.getElementById('format').value
-          const data = cards
-          let filename = `${responseElement.querySelector('#processed').textContent}.${format}`
-
-          if (format === 'csv') {
-            const headers = Object.keys(data[0]).join(',')
-            const rows = data.map(item => Object.values(item).join(',')).join('\n')
-            content = `${headers}\n${rows}`
-          } else if (format === 'list') {
-            content = data.map(item => `${item.name}: ${item.id}`).join('\n')
-          } else if (format === 'json') {
-            content = JSON.stringify(cards, null, 2)
-          } else if (format === 'finder') {
-            content = data.map(item => `${item.id},${item.season}`).join('\n')
-          }
+          const extension = ['csv', 'json'].includes(format) ? format : 'txt';
+          const filename = `${responseElement.querySelector('#processed').textContent}.${extension}`
+          content = formatResponse(format, cards)
 
           const blob = new Blob([content], { type: 'text/plain' })
           const link = document.createElement('a')
