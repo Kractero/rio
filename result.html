@@ -203,7 +203,7 @@
                     )
                     .join('')}
                 </ul>`
-            : ['csv', 'list', 'json', 'finder', 'onelinelist'].includes(formObject.format) === 'csv'
+            : ['csv', 'list', 'json', 'finder', 'onelinelist'].includes(formObject.format)
             ? `<pre>${formatResponse(formObject.format, cards)}</pre>`
             : 'Invalid format selected. Please choose "full", "csv", "list", or "json".'
 
