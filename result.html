@@ -81,6 +81,10 @@
           return
         }
 
+        function sleep(ms) {
+          return new Promise(resolve => setTimeout(resolve, ms))
+        }
+
         const responseElement = document.querySelector('#response')
 
         const serverObject = {
@@ -119,26 +123,33 @@
             deck: value => `https://www.nationstates.net/cgi-bin/api.cgi?q=cards+deck;nationname=${value}`,
           }
 
-          const fetchPromises = clientSideQueries
-            .map(query => {
-              const fetchUrl = apiMap[query.key] ? apiMap[query.key](query.value) : null
-              if (fetchUrl) {
-                return fetch(`${fetchUrl}&userAgent=${useragent}__using__QueriesRio__author_main_nation_Kractero`, {
-                  headers: {
-                    'User-Agent': `Used by ${useragent} with Queries (new r3n), modified by Kractero`,
-                  },
-                })
-                  .then(res => res.text())
-                  .then(text => {
-                    const parser = new DOMParser()
-                    return parser.parseFromString(text, 'application/xml')
-                  })
-              }
-              return null
+          const responses = []
+          for (const query of clientSideQueries) {
+            const fetchUrl = apiMap[query.key] ? apiMap[query.key](query.value) : null
+            if (!fetchUrl) continue
+            const res = await fetch(`${fetchUrl}&userAgent=${useragent}__using__QueriesRio__author_main_nation_Kractero`, {
+              headers: {
+                'User-Agent': `Used by ${useragent} with Queries (new r3n), modified by Kractero`,
+              },
             })
-            .filter(promise => promise !== null)
 
-          const responses = await Promise.all(fetchPromises)
+            const ratelimitRemaining = Number(res.headers.get('RateLimit-Remaining'))
+            const ratelimitReset = Number(res.headers.get('RateLimit-Reset'))
+            const retryAfter = Number(res.headers.get('Retry-After'))
+
+            if (res.status === 429) {
+              const waitTime = retryAfter > 0 ? retryAfter : (ratelimitReset / ratelimitRemaining)
+              await sleep(waitTime * 1000)
+            } else if (ratelimitRemaining > 0) {
+              await sleep((ratelimitReset / ratelimitRemaining) * 1000)
+            } else {
+              await sleep(ratelimitReset * 1000)
+            }
+
+            const text = await res.text()
+            const parser = new DOMParser()
+            responses.push(parser.parseFromString(text, 'application/xml'))
+          }
 
           responses.forEach((response, i) => {
             if (response) {
@@ -149,7 +160,6 @@
                 COLLECTION: 'CARD',
                 DECK: 'CARD',
               }
-
               let matchingIdsAndSeasons = new Set()
 
               Object.keys(selectors).forEach(key => {
