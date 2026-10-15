@@ -99,7 +99,7 @@
         let cards = data.cards
         let content = ''
 
-        const clientSide = formObject.client.split('\n')
+        const clientSide = (formObject.client || '').split('\n').filter(line => line.trim())
 
         if (clientSide.length > 0) {
           const negations = []
@@ -183,7 +183,7 @@
         }
 
         if (clientSide.includes('cte')) {
-          const cardIds = data.cards.map(card => card.id)
+          const cardIds = cards.map(card => card.id)
           const response = await fetch('https://kotama.kractero.com/api/cte', {
             method: 'POST',
             headers: {
